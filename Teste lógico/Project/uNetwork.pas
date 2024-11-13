@@ -1,0 +1,84 @@
+unit uNetwork;
+
+interface
+
+uses
+  SysUtils, Classes;
+
+type
+  TNetwork = class
+  private
+    wConexoes: array of TList;  
+    procedure pVisitar(prElemento: Integer; var prVisitados: array of Boolean);
+  public
+    constructor Create(prNumElementos: Integer);
+    destructor Destroy; override;
+    procedure pConectar(prElemento1, prElemento2: Integer);
+    function fConsultar(prElemento1, prElemento2: Integer): Boolean;
+  end;
+
+implementation
+
+{ TNetwork }
+
+constructor TNetwork.Create(prNumElementos: Integer);
+var
+  I: Integer;
+begin
+  if prNumElementos <= 0 then
+    raise Exception.Create('O número de elementos deve ser maior que zero.');
+
+  SetLength(wConexoes, prNumElementos + 1);  
+  for I := 0 to prNumElementos do
+    wConexoes[I] := TList.Create;
+end;
+
+destructor TNetwork.Destroy;
+var
+  wI: Integer;
+begin
+  for wI := Low(wConexoes) to High(wConexoes) do
+    wConexoes[wI].Free;
+  inherited;
+end;
+
+procedure TNetwork.pConectar(prElemento1, prElemento2: Integer);
+begin
+  if (prElemento1 < 1) or (prElemento2 < 1) or (prElemento1 >= Length(wConexoes)) or (prElemento2 >= Length(wConexoes)) then
+    raise Exception.Create('Elemento fora do intervalo permitido.');
+
+  if wConexoes[prElemento1].IndexOf(Pointer(prElemento2)) = -1 then
+    wConexoes[prElemento1].Add(Pointer(prElemento2));
+
+  if wConexoes[prElemento2].IndexOf(Pointer(prElemento1)) = -1 then
+    wConexoes[prElemento2].Add(Pointer(prElemento1));
+end;
+
+function TNetwork.fConsultar(prElemento1, prElemento2: Integer): Boolean;
+var
+  wVisitados: array of Boolean;
+begin
+  if (prElemento1 < 1) or (prElemento2 < 1) or (prElemento1 >= Length(wConexoes)) or (prElemento2 >= Length(wConexoes)) then
+    raise Exception.Create('Elemento fora do intervalo permitido.');
+
+  SetLength(wVisitados, Length(wConexoes));
+  pVisitar(prElemento1, wVisitados);
+  Result := wVisitados[prElemento2];
+end;
+
+procedure TNetwork.pVisitar(prElemento: Integer; var prVisitados: array of Boolean);
+var
+  I: Integer;
+  wConectado: Integer;
+begin
+  prVisitados[prElemento] := True;
+  for I := 0 to wConexoes[prElemento].Count - 1 do
+  begin
+    wConectado := Integer(wConexoes[prElemento][I]);
+
+    if not prVisitados[wConectado] then
+      pVisitar(wConectado, prVisitados);
+  end;
+end;
+
+end.
